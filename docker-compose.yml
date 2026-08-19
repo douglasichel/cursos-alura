@@ -1,5 +1,19 @@
 version: '3'
 services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=postgres
+      - PORT=5432
+      - USER=root
+      - PASSWORD=root
+      - DBNAME=root
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: "postgres:13"
     environment:

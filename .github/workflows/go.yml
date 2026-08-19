@@ -4,7 +4,7 @@ on:
   push:
     branches: [ '*' ]
   pull_request:
-    branches: [ '*' ]
+    branches: [  ]
 
 jobs:
 
@@ -26,9 +26,15 @@ jobs:
       
     - name: Create-DB
       run: docker-compose up -d
+    
+    - name: Wait for DB
+      run: sleep 10
+
+    - name: Download dependencies
+      run: go mod download
 
     - name: Test
-      run: go test -v main_test.go 
+      run: go test -v ./... 
       
   
   build:

@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     env:
-      HOST: postgres
+      HOST: localhost
       PORT: 5432
       USER: root
       PASSWORD: root
@@ -20,6 +20,20 @@ jobs:
       matrix:
         go_version: ['1.18', '1.19', '1.20']
         os: ['ubuntu-latest']
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: root
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
     steps:
     - uses: actions/checkout@v3
 
@@ -27,16 +41,22 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go_version }}
-      
-    - name: Build-DB
-      run: docker compose build
-      
-    - name: Create-DB
-      run: docker compose up -d
     
-    - name: Wait for DB
-      run: sleep 15
-
+    - name: Wait for PostgreSQL
+      run: |
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5432 -U root; then
+            echo "PostgreSQL is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: PostgreSQL not ready yet..."
+          sleep 2
+        done
+        echo "PostgreSQL failed to start"
+        exit 1
+      env:
+        PGPASSWORD: root
+    
     - name: Test
       run: go test -v ./... 
       
